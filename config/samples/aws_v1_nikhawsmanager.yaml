@@ -1,0 +1,12 @@
+apiVersion: aws.nikhilshinde.com/v1
+kind: NikhAWSManager
+metadata:
+  labels:
+    app.kubernetes.io/name: nikhawsmanager
+    app.kubernetes.io/instance: nikhawsmanager-sample
+    app.kubernetes.io/part-of: nikhil-vmstate-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: nikhil-vmstate-operator
+  name: nikhawsmanager-sample
+spec:
+  # TODO(user): Add fields here

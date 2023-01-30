@@ -1,0 +1,12 @@
+apiVersion: aws.nikhilshinde.com/v1
+kind: NikhAWSEC2
+metadata:
+  labels:
+    app.kubernetes.io/name: nikhawsec2
+    app.kubernetes.io/instance: nikhawsec2-sample
+    app.kubernetes.io/part-of: nikhil-vmstate-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: nikhil-vmstate-operator
+  name: nikhawsec2-sample
+spec:
+  # TODO(user): Add fields here

@@ -1,0 +1,29 @@
+domain: nikhilshinde.com
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: nikhil-vmstate-operator
+repo: github.com/nikhilshinde5/nikhil-vmstate-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: nikhilshinde.com
+  group: aws
+  kind: NikhAWSEC2
+  path: github.com/nikhilshinde5/nikhil-vmstate-operator/apis/aws/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: nikhilshinde.com
+  group: aws
+  kind: NikhAWSManager
+  path: github.com/nikhilshinde5/nikhil-vmstate-operator/apis/aws/v1
+  version: v1
+version: "3"

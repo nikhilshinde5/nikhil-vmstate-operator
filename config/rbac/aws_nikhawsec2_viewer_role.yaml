@@ -1,0 +1,27 @@
+# permissions for end users to view nikhawsec2s.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: nikhawsec2-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: nikhil-vmstate-operator
+    app.kubernetes.io/part-of: nikhil-vmstate-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: nikhawsec2-viewer-role
+rules:
+- apiGroups:
+  - aws.nikhilshinde.com
+  resources:
+  - nikhawsec2s
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - aws.nikhilshinde.com
+  resources:
+  - nikhawsec2s/status
+  verbs:
+  - get
