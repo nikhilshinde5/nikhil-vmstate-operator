@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,7 +30,11 @@ type NikhAWSManagerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of NikhAWSManager. Edit nikhawsmanager_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Image         string           `json:"image,omitempty"`
+	RestartPolicy v1.RestartPolicy `json:"restartPolicy,omitempty"`
+	TagKey        string           `json:"tagKey,omitempty"`
+	TagValue      string           `json:"tagValue,omitempty"`
+	ConfigMapName string           `json:"configMapName,omitempty"`
 }
 
 // NikhAWSManagerStatus defines the observed state of NikhAWSManager

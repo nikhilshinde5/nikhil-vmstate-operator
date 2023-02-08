@@ -10,3 +10,9 @@ metadata:
   name: nikhawsmanager-sample
 spec:
   # TODO(user): Add fields here
+  image: "quay.io/manoj_dhanorkar/aws-vmstate:v1.1-ns"
+  restartPolicy: "Always"
+  tagKey: "NikKey"
+  tagValue: "NikValue"
+  configMapName: my-config-map
+

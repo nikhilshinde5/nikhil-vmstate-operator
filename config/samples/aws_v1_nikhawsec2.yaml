@@ -10,3 +10,9 @@ metadata:
   name: nikhawsec2-sample
 spec:
   # TODO(user): Add fields here
+  image: "quay.io/manoj_dhanorkar/aws-vmcreate:v1.1-ns"
+  imagePullPolicy: "Always"
+  command: "create"
+  tagKey: "NikKey"
+  tagValue: "NikValue"
+  configMapName: my-config-map

@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,7 +30,12 @@ type NikhAWSEC2Spec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of NikhAWSEC2. Edit nikhawsec2_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Image           string        `json:"image,omitempty"`
+	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	Command         string        `json:"command,omitempty"`
+	TagKey          string        `json:"tagKey,omitempty"`
+	TagValue        string        `json:"tagValue,omitempty"`
+	ConfigMapName   string        `json:"configMapName,omitempty"`
 }
 
 // NikhAWSEC2Status defines the observed state of NikhAWSEC2
