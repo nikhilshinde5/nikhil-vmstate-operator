@@ -19,6 +19,8 @@ package aws
 import (
 	"context"
 
+	"k8s.io/client-go/tools/record"
+
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,13 +39,14 @@ import (
 // NikhAWSEC2Reconciler reconciles a NikhAWSEC2 object
 type NikhAWSEC2Reconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	recorder record.EventRecorder
 }
 
-type ConfigMap struct {
-	InstanceType string `json:"instance_type"`
-	ImageId      string `json:"image_id"`
-}
+// type AWSEC2ConfigMap struct {
+// 	InstanceType string `json:"instance_type"`
+// 	ImageId      string `json:"image_id"`
+// }
 
 //+kubebuilder:rbac:groups=aws.nikhilshinde.com,resources=nikhawsec2s,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=aws.nikhilshinde.com,resources=nikhawsec2s/status,verbs=get;update;patch
@@ -90,6 +93,14 @@ func (r *NikhAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	// Update the status of the CR
+	NikhAWSEC2.Status.Status = "in-progress"
+	err = r.Client.Status().Update(ctx, NikhAWSEC2)
+	if err != nil {
+		log.Error(err, "Failed to update status")
+		return ctrl.Result{}, err
+	}
+
 	// Add const values for mandatory specs ( if left blank)
 	// log.Info("Adding NikhAWSEC2 mandatory specs")
 	// utils.AddBackupMandatorySpecs(NikhAWSEC2)
@@ -100,7 +111,7 @@ func (r *NikhAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	//log.Info(*found.)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Job
-		job := r.JobForNikhAWSEC2(NikhAWSEC2, "create")
+		job := r.JobForNikhAWSEC2(ctx, NikhAWSEC2, "create")
 		log.Info("Creating a new Job", "job.Namespace", job.Namespace, "job.Name", job.Name)
 		err = r.Client.Create(ctx, job)
 		if err != nil {
@@ -108,6 +119,14 @@ func (r *NikhAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			return ctrl.Result{}, err
 		}
 		// job created successfully - return and requeue
+		// Update the status of the CR to "created"
+		NikhAWSEC2.Status.Status = "created"
+		err = r.Client.Status().Update(ctx, NikhAWSEC2)
+		if err != nil {
+			log.Error(err, "Failed to update status")
+			return ctrl.Result{}, err
+		}
+		// time.Sleep(120 * time.Second)
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get job")
@@ -236,6 +255,7 @@ func (r *NikhAWSEC2Reconciler) finalizeNikhAWSEC2(ctx context.Context, NikhAWSEC
 	// needs to do before the CR can be deleted. Examples
 	// of finalizers include performing backups and deleting
 	// resources that are not owned by this CR, like a PVC.
+
 	log := ctrllog.FromContext(ctx)
 	log.Info("Successfully finalized NikhAWSEC2")
 	found := &batchv1.Job{}
@@ -243,7 +263,7 @@ func (r *NikhAWSEC2Reconciler) finalizeNikhAWSEC2(ctx context.Context, NikhAWSEC
 	//log.Info(*found.)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new job
-		job := r.JobForNikhAWSEC2(NikhAWSEC2, "delete")
+		job := r.JobForNikhAWSEC2(ctx, NikhAWSEC2, "delete")
 		log.Info("Creating a new Job", "job.Namespace", job.Namespace, "job.Name", job.Name)
 		err = r.Client.Create(ctx, job)
 		if err != nil {
@@ -251,7 +271,15 @@ func (r *NikhAWSEC2Reconciler) finalizeNikhAWSEC2(ctx context.Context, NikhAWSEC
 			return err
 		}
 		// job created successfully - return and requeue
+		NikhAWSEC2.Status.Status = "terminated"
+		err = r.Client.Status().Update(ctx, NikhAWSEC2)
+		if err != nil {
+			log.Error(err, "Failed to update status")
+			return err
+		}
+		// time.Sleep(120 * time.Second)
 		return nil
+
 	} else if err != nil {
 		log.Error(err, "Failed to get job")
 		return err
@@ -260,7 +288,7 @@ func (r *NikhAWSEC2Reconciler) finalizeNikhAWSEC2(ctx context.Context, NikhAWSEC
 }
 
 // Job Spec
-func (r *NikhAWSEC2Reconciler) JobForNikhAWSEC2(NikhAWSEC2 *awsv1.NikhAWSEC2, command string) *batchv1.Job {
+func (r *NikhAWSEC2Reconciler) JobForNikhAWSEC2(ctx context.Context, NikhAWSEC2 *awsv1.NikhAWSEC2, command string) *batchv1.Job {
 
 	// configMapData := make(map[string]string, 0)
 	// configMapData["config.json"] = "ami-0d0ca2066b861631c"
@@ -274,7 +302,7 @@ func (r *NikhAWSEC2Reconciler) JobForNikhAWSEC2(NikhAWSEC2 *awsv1.NikhAWSEC2, co
 	// 	panic(err)
 	// }
 
-	// cm, err := clientset.CoreV1().ConfigMaps(NikhAWSEC2.Namespace).Get(NikhAWSEC2.Spec.ConfigMapName, metav1.GetOptions{})
+	// cm, err := clientset.CoreV1().ConfigMaps(NikhAWSEC2.Namespace).Get(ctx, NikhAWSEC2.Spec.ConfigMapName, metav1.GetOptions{})
 	// if err != nil {
 	// 	panic(err)
 	// }
@@ -283,8 +311,8 @@ func (r *NikhAWSEC2Reconciler) JobForNikhAWSEC2(NikhAWSEC2 *awsv1.NikhAWSEC2, co
 	// configData := cm.Data["config.json"]
 
 	// // Unmarshal the JSON data into a Config object.
-	// var configMap ConfigMap
-	// err = json.Unmarshal([]byte(configData), &config)
+	// var awsec2Configmap AWSEC2ConfigMap
+	// err = json.Unmarshal([]byte(configData), &awsec2Configmap)
 	// if err != nil {
 	// 	panic(err)
 	// }
@@ -323,7 +351,7 @@ func (r *NikhAWSEC2Reconciler) JobForNikhAWSEC2(NikhAWSEC2 *awsv1.NikhAWSEC2, co
 						Env: []corev1.EnvVar{
 							{
 								Name:  "ec2_command",
-								Value: NikhAWSEC2.Spec.Command,
+								Value: command,
 							},
 							{
 								Name:  "ec2_tag_key",
@@ -333,14 +361,14 @@ func (r *NikhAWSEC2Reconciler) JobForNikhAWSEC2(NikhAWSEC2 *awsv1.NikhAWSEC2, co
 								Name:  "ec2_tag_value",
 								Value: NikhAWSEC2.Spec.TagValue,
 							},
-							{
-								Name:  "ec2_image_id",
-								Value: "ami-0d0ca2066b861631c",
-							},
-							{
-								Name:  "ec2_instance_type",
-								Value: "t2.micro",
-							},
+							// {
+							// 	Name:  "ec2_image_id",
+							// 	Value: awsec2Configmap.ImageId,
+							// },
+							// {
+							// 	Name:  "ec2_instance_type",
+							// 	Value: awsec2Configmap.InstanceType,
+							// },
 							{
 								Name: "AWS_ACCESS_KEY_ID",
 								ValueFrom: &corev1.EnvVarSource{
@@ -390,18 +418,18 @@ func (r *NikhAWSEC2Reconciler) JobForNikhAWSEC2(NikhAWSEC2 *awsv1.NikhAWSEC2, co
 }
 
 // func setFromConfigMap(tag string) string {
-// 	file, err := os.Open("/opt/data/config.json")
-// 	if err != nil {
-// 		fmt.Println("Error opening config file:", err)
-// 		os.Exit(1)
-// 	}
-// 	defer file.Close()
+// file, err := os.Open("/opt/data/config.json")
+// if err != nil {
+// 	fmt.Println("Error opening config file:", err)
+// 	os.Exit(1)
+// }
+// defer file.Close()
 
-// 	var config ConfigMap
-// 	if err := json.NewDecoder(file).Decode(&config); err != nil {
-// 		fmt.Println("Error decoding config:", err)
-// 		os.Exit(1)
-// 	}
+// var config ConfigMap
+// if err := json.NewDecoder(file).Decode(&config); err != nil {
+// 	fmt.Println("Error decoding config:", err)
+// 	os.Exit(1)
+// }
 // 	if tag == "ec2_image_id" {
 // 		return config.ImageID
 // 	} else if tag == "ec2_instance_type" {

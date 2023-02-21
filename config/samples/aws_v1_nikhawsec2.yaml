@@ -13,6 +13,6 @@ spec:
   image: "quay.io/manoj_dhanorkar/aws-vmcreate:v1.1-ns"
   imagePullPolicy: "Always"
   command: "create"
-  tagKey: "NikKey"
-  tagValue: "NikValue"
+  tagKey: "Name"
+  tagValue: "nikhil-test"
   configMapName: my-config-map

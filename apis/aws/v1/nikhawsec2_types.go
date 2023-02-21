@@ -42,6 +42,7 @@ type NikhAWSEC2Spec struct {
 type NikhAWSEC2Status struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Status string `json:"status"`
 }
 
 //+kubebuilder:object:root=true
